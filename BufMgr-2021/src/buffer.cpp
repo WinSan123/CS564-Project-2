@@ -54,14 +54,11 @@ void BufMgr::advanceClock() {
 }
 
 void BufMgr::allocBuf(FrameId& frame) {
-    // Allocate a free frame
+    // Allocate a free frame (just return the next available frame)
+
     // param frame is the variable which the return value should be in
     // throws BufferExceededException If no such buffer is found which can be
     // allocated
-    //
-    // CALLER OF THIS METHOD: MAKE SURE TO CHECK IF THE FRAME IS DIRTY
-    // (this.bufDescTable.at(frame).dirty;) and then flush the page if it
-    // is before using it
 
     // The buffer that the clock is starting on. Used together with
     // candidateSeen to determine if should throw BufferExceededException
@@ -75,23 +72,23 @@ void BufMgr::allocBuf(FrameId& frame) {
         this.advanceClock();
 
         if ((this.clockHand == startingFrame) && (!candidateSeen))
-            throw badgerdb::BufferExceededException();
+            throw BufferExceededException();
 
-        BufDesc currFrame = this.bufDescTable.at(this.clockHand);
+        BufDesc currFrameDesc = this.bufDescTable.at(this.clockHand);
 
         // Valid set?
-        if (!currBufDesc.valid) {
+        if (!currFrameDesc.valid) {
             // No: use frame and call "Set()" on the frame ("Set()" is called
             //   by caller of this method to set the file and pageNum for the
             //   frame)
-            frame = this.clockHand;
+            *frame = this.clockHand;
             return;
         }
 
         // refbit set?
-        if (currFrame.refbit) {
+        if (currFrameDesc.refbit) {
             // Yes: clear refbit
-            currFrame.refbit = false;
+            currFrameDesc.refbit = false;
 
             // This frame can be used next full rotation of clock so no
             // exception must be thrown if full revolution done once
@@ -102,21 +99,70 @@ void BufMgr::allocBuf(FrameId& frame) {
         }
 
         // page pinned?
-        if (currFrame.pinCnt > 0) {
+        if (currFrameDesc.pinCnt > 0) {
             // Yes: Advance Clock Pointer (continue to next iter of while loop)
             continue;
         }
 
-        // Use Frame (it was set to @param frame)
-        frame = this.clockHand;
+        // dirty bit set?
+        if (currFrameDesc.dirty) {
+            // Yes: Flush page to disk
+            Page page = bufPool.at(currFrameDesc.frameNo);
+            currFrameDesc.file.writePage(page);
+            currFrameDesc.dirty = false;
+        }
+
+        // If the buffer frame has a valid page in it, remove the appropriate
+        //   entry from the hash table
+        this.hashTable.remove(currFrameDesc.file, currFrameDesc.pageNo);
+
+        // Use Frame (caller needs to call "Set()" on the BufDesc for this frame)
+        *frame = this.clockHand;
         return;
     }
 }
 
 void BufMgr::readPage(File& file, const PageId pageNo, Page*& page) {
-    PageId pageNo = NULL;
 
-    currBuff = this.hashTable.lookup(file, pageNo, pageNo);
+    FrameId frameNo; // will be frame number
+    try {
+        // lookup sets frameNo if successful
+        this.hashTable.lookup(file, pageNo, &frameNo);
+
+        // Since the page is already in the table do what is necessary and
+        //   return
+
+        // Set page (this is the return value)
+        page = this.bufPool.at(frameNo);
+
+        BufDesc bufDesc = this.bufDescTable.at(frameNo);
+
+        // do what is necessary
+        bufDesc.refbit = true;
+        bufDesc.pinCnt++;
+
+        return;
+
+    catch (HashNotFoundException *e) {
+        // page not currently in hashTable
+
+        // allocate a buffer frame
+        // FrameID of allocated frame set to frameNo
+        allocBuf(&frameNo);
+
+        // read the pag efrom disk into the buffer pool frame
+        page = file.readPage(pageNo);
+        this.bufPool.assign(frameNo, page);
+
+        // insert page into hashtable
+        this.hashTable.insert(file, pageNo, frameNo);
+
+        // invoke Set() on the frame to set it up properly
+        BufDesc frameDesc = bufDescTable.at(frameNo);
+        frameDesc.Set(file, pageNo);
+
+        return;
+    }
 }
 
 void BufMgr::unPinPage(File& file, const PageId pageNo, const bool dirty) {
