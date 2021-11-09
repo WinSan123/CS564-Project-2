@@ -7,6 +7,7 @@ CFLAGS = -std=c++14 -g -Wall
 all:
 	cd src;\
 	$(CC) $(CFLAGS) *.cpp exceptions/*.cpp -I. -o badgerdb_main
+
 clean:
 	cd src;\
 	rm -f badgerdb_main test.?

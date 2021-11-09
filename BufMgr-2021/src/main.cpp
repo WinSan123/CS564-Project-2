@@ -44,7 +44,7 @@ void test6(File &file1);
 void testBufMgr();
 
 int main() {
-  // Following code shows how to you File and Page classes
+  // Following code shows how to use File and Page classes
 
   const std::string filename = "test.db";
   // Clean up from any previous runs that crashed.

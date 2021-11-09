@@ -181,7 +181,7 @@ class BufMgr {
   /**
    * Allocate a free frame.
    *
-   * @param frame   	Frame reference, frame ID of allocated frame returned
+   * @param frame   Frame reference, frame ID of allocated frame returned
    * via this variable
    * @throws BufferExceededException If no such buffer is found which can be
    * allocated
