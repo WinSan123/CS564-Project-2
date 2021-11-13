@@ -180,10 +180,50 @@ namespace badgerdb
 
     void BufMgr::unPinPage(File &file, const PageId pageNo, const bool dirty)
     {
+        // decrements the pinCnt of the frame containing (file, PageNo) and if dirty == true sets the dirty bit
+        // throws PageNotePinned if pntCnt is already zero
+        // does nothing if page is not found in table
+
+        FrameId frameNo; // will be frame number
+        try {
+            // lookup sets frameNo if successful
+            hashTable.lookup(file, pageNo, frameNo);
+
+            BufDesc bufDesc = bufDescTable.at(frameNo);
+
+            if (bufDesc.pinCnt == 0):
+                throw PageNotPinnedException(file.filename(), pageNo, frameNo);
+
+            bufDesc.dirty = dirty;
+        }
+        catch (HashNotFoundException *e)
+        {
+            // does nothing if page is not found in table
+        }
+
     }
 
     void BufMgr::allocPage(File &file, PageId &pageNo, Page *&page)
     {
+        // allocate empty page in specificed file by invoking file.allocatePage()
+        // newly allocated page gets returned
+        // allocBuf is called to get a buffer pool frame
+        // entry is inserted into table 
+        // Set() is called to set up frame
+        // Set() returns page num of new page and pointer to buffer frame
+
+        Page newPage = file.allocatePage();
+
+        FrameId frameNo; // will be frame number
+
+        allocBuf(frameNo);
+
+        // insert page into hashtable
+        hashTable.insert(file, pageNo, frameNo);
+
+        // invoke Set() on the frame to set it up properly
+        BufDesc frameDesc = bufDescTable.at(frameNo);
+        frameDesc.Set(file, pageNo);
     }
 
     /**
