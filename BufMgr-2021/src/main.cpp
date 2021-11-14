@@ -23,8 +23,7 @@
     exit(1);                                        \
   }
 
-#define PRINT(str) \
-    std::cout << str << std::endl;
+#define PRINT(str) std::cout << str << std::endl;
 
 using namespace badgerdb;
 
@@ -184,7 +183,8 @@ void test1(File &file1) {
     bufMgr->unPinPage(file1, pid[i], false);
   }
 
-  std::cout << "Test 1 passed" << "\n";
+  std::cout << "Test 1 passed"
+            << "\n";
 }
 
 void test2(File &file1, File &file2, File &file3) {
@@ -247,7 +247,8 @@ void test2(File &file1, File &file2, File &file3) {
     bufMgr->unPinPage(file3, i + 1, true);
   }
 
-  std::cout << "Test 2 passed" << "\n";
+  std::cout << "Test 2 passed"
+            << "\n";
 }
 
 void test3(File &file4) {
@@ -259,7 +260,8 @@ void test3(File &file4) {
   } catch (const InvalidPageException &e) {
   }
 
-  std::cout << "Test 3 passed" << "\n";
+  std::cout << "Test 3 passed"
+            << "\n";
 }
 
 void test4(File &file4) {
@@ -273,7 +275,8 @@ void test4(File &file4) {
   } catch (const PageNotPinnedException &e) {
   }
 
-  std::cout << "Test 4 passed" << "\n";
+  std::cout << "Test 4 passed"
+            << "\n";
 }
 
 void test5(File &file5) {
@@ -292,7 +295,8 @@ void test5(File &file5) {
   } catch (const BufferExceededException &e) {
   }
 
-  std::cout << "Test 5 passed" << "\n";
+  std::cout << "Test 5 passed"
+            << "\n";
 
   for (i = 1; i <= num; i++) bufMgr->unPinPage(file5, i, true);
 }
@@ -311,7 +315,8 @@ void test6(File &file1) {
   } catch (const PagePinnedException &e) {
   }
 
-  std::cout << "Test 6 passed" << "\n";
+  std::cout << "Test 6 passed"
+            << "\n";
 
   for (i = 1; i <= num; i++) bufMgr->unPinPage(file1, i, true);
 
