@@ -78,10 +78,10 @@ void BufMgr::allocBuf(FrameId &frame) {
     if ((clockHand == startingFrame) && (!candidateSeen))
       throw BufferExceededException();
 
-    BufDesc currFrameDesc = bufDescTable.at(clockHand);
+    BufDesc *currFrameDesc = &bufDescTable.at(clockHand);
 
     // Valid set?
-    if (!currFrameDesc.valid) {
+    if (!currFrameDesc->valid) {
       // No: use frame and call "Set()" on the frame ("Set()" is called
       //   by caller of this method to set the file and pageNum for the
       //   frame)
@@ -90,9 +90,9 @@ void BufMgr::allocBuf(FrameId &frame) {
     }
 
     // refbit set?
-    if (currFrameDesc.refbit) {
+    if (currFrameDesc->refbit) {
       // Yes: clear refbit
-      currFrameDesc.refbit = false;
+      currFrameDesc->refbit = false;
 
       // This frame can be used next full rotation of clock so no
       // exception must be thrown if full revolution done once
@@ -103,22 +103,22 @@ void BufMgr::allocBuf(FrameId &frame) {
     }
 
     // page pinned?
-    if (currFrameDesc.pinCnt > 0) {
+    if (currFrameDesc->pinCnt > 0) {
       // Yes: Advance Clock Pointer (continue to next iter of while loop)
       continue;
     }
 
     // dirty bit set?
-    if (currFrameDesc.dirty) {
+    if (currFrameDesc->dirty) {
       // Yes: Flush page to disk
-      Page page = bufPool.at(currFrameDesc.frameNo);
-      currFrameDesc.file.writePage(page);
-      currFrameDesc.dirty = false;
+      Page page = bufPool.at(currFrameDesc->frameNo);
+      currFrameDesc->file.writePage(page);
+      currFrameDesc->dirty = false;
     }
 
     // If the buffer frame has a valid page in it, remove the appropriate
     //   entry from the hash table
-    hashTable.remove(currFrameDesc.file, currFrameDesc.pageNo);
+    hashTable.remove(currFrameDesc->file, currFrameDesc->pageNo);
 
     // Use Frame (caller needs to call "Set()" on the BufDesc for this frame)
     frame = clockHand;
@@ -144,19 +144,19 @@ void BufMgr::readPage(File &file, const PageId pageNo, Page *&page) {
     hashTable.lookup(file, pageNo, frameNo);
 
     // Since the page is already in the table do what is necessary and
-    //   return
+    // return
 
     // Set page (this is the return value)
     page = &bufPool.at(frameNo);
 
-    BufDesc bufDesc = bufDescTable.at(frameNo);
+    BufDesc *bufDesc = &bufDescTable.at(frameNo);
 
     // do what is necessary
-    bufDesc.refbit = true;
-    bufDesc.pinCnt++;
+    bufDesc->refbit = true;
+    bufDesc->pinCnt++;
 
     return;
-  } catch (HashNotFoundException *e) {
+  } catch (HashNotFoundException &e) {
     // page not currently in hashTable
 
     // allocate a buffer frame
@@ -164,15 +164,15 @@ void BufMgr::readPage(File &file, const PageId pageNo, Page *&page) {
     allocBuf(frameNo);
 
     // read the page from disk into the buffer pool frame
-    *page = file.readPage(pageNo);
-    bufPool.assign(frameNo, *page);
+    bufPool[frameNo] = file.readPage(pageNo);
+    page = &bufPool.at(frameNo);
 
     // insert page into hashtable
     hashTable.insert(file, pageNo, frameNo);
 
     // invoke Set() on the frame to set it up properly
-    BufDesc frameDesc = bufDescTable.at(frameNo);
-    frameDesc.Set(file, pageNo);
+    BufDesc *frameDesc = &bufDescTable.at(frameNo);
+    frameDesc->Set(file, pageNo);
 
     return;
   }
@@ -198,14 +198,15 @@ void BufMgr::unPinPage(File &file, const PageId pageNo, const bool dirty) {
     // lookup sets frameNo if successful
     hashTable.lookup(file, pageNo, frameNo);
 
-    BufDesc bufDesc = bufDescTable.at(frameNo);
+    BufDesc *bufDesc = &bufDescTable.at(frameNo);
 
-    if (bufDesc.pinCnt == 0)
-                throw PageNotPinnedException(file.filename(), pageNo, frameNo);
+    if (bufDesc->pinCnt == 0) {
+        throw PageNotPinnedException(file.filename(), pageNo, frameNo);
+    }
 
-    bufDesc.pinCnt--;
-    bufDesc.dirty = dirty;
-  } catch (HashNotFoundException *e) {
+    bufDesc->pinCnt--;
+    bufDesc->dirty = dirty;
+  } catch (HashNotFoundException &e) {
     // does nothing if page is not found in table
   }
 }
@@ -245,8 +246,8 @@ void BufMgr::allocPage(File &file, PageId &pageNo, Page *&page) {
   hashTable.insert(file, pageNo, frameNo);
 
   // invoke Set() on the frame to set it up properly
-  BufDesc frameDesc = bufDescTable.at(frameNo);
-  frameDesc.Set(file, pageNo);
+  BufDesc *frameDesc = &bufDescTable.at(frameNo);
+  frameDesc->Set(file, pageNo);
 }
 
 /**
@@ -323,7 +324,7 @@ void BufMgr::disposePage(File &file, const PageId PageNo) {
     bufDescTable[frameNo].clear();
     // corresponding entry is removed
     hashTable.remove(file, PageNo);
-  } catch (HashNotFoundException *e) {
+  } catch (HashNotFoundException &e) {
     // when page to be deleted is not in the buffer pool
     // we do nothing
   }
