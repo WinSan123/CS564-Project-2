@@ -23,6 +23,9 @@
     exit(1);                                        \
   }
 
+#define PRINT(str) \
+    std::cout << str << std::endl;
+
 using namespace badgerdb;
 
 const PageId num = 100;
@@ -44,6 +47,8 @@ void test6(File &file1);
 void testBufMgr();
 
 int main() {
+  PRINT(" --- Test File I/O --- ");
+
   // Following code shows how to use File and Page classes
 
   const std::string filename = "test.db";
@@ -102,6 +107,8 @@ int main() {
 }
 
 void testBufMgr() {
+  PRINT(" --- Test BufMgr --- ");
+
   // Create buffer manager
   bufMgr = std::make_shared<BufMgr>(num);
 
@@ -160,9 +167,13 @@ void test1(File &file1) {
   // Allocating pages in a file...
   for (i = 0; i < num; i++) {
     bufMgr->allocPage(file1, pid[i], page);
+    PRINT("HERE0");
     sprintf(tmpbuf, "test.1 Page %u %7.1f", pid[i], (float)pid[i]);
+    PRINT("HERE1");
     rid[i] = page->insertRecord(tmpbuf);
+    PRINT("HERE2");
     bufMgr->unPinPage(file1, pid[i], true);
+    PRINT("HERE3");
   }
 
   // Reading pages back...
@@ -174,8 +185,7 @@ void test1(File &file1) {
     }
     bufMgr->unPinPage(file1, pid[i], false);
   }
-  std::cout << "Test 1 passed"
-            << "\n";
+  std::cout << "Test 1 passed" << "\n";
 }
 
 void test2(File &file1, File &file2, File &file3) {
@@ -222,8 +232,7 @@ void test2(File &file1, File &file2, File &file3) {
     bufMgr->unPinPage(file3, i + 1, true);
   }
 
-  std::cout << "Test 2 passed"
-            << "\n";
+  std::cout << "Test 2 passed" << "\n";
 }
 
 void test3(File &file4) {
@@ -235,8 +244,7 @@ void test3(File &file4) {
   } catch (const InvalidPageException &e) {
   }
 
-  std::cout << "Test 3 passed"
-            << "\n";
+  std::cout << "Test 3 passed" << "\n";
 }
 
 void test4(File &file4) {
@@ -250,8 +258,7 @@ void test4(File &file4) {
   } catch (const PageNotPinnedException &e) {
   }
 
-  std::cout << "Test 4 passed"
-            << "\n";
+  std::cout << "Test 4 passed" << "\n";
 }
 
 void test5(File &file5) {
@@ -270,8 +277,7 @@ void test5(File &file5) {
   } catch (const BufferExceededException &e) {
   }
 
-  std::cout << "Test 5 passed"
-            << "\n";
+  std::cout << "Test 5 passed" << "\n";
 
   for (i = 1; i <= num; i++) bufMgr->unPinPage(file5, i, true);
 }
@@ -290,8 +296,7 @@ void test6(File &file1) {
   } catch (const PagePinnedException &e) {
   }
 
-  std::cout << "Test 6 passed"
-            << "\n";
+  std::cout << "Test 6 passed" << "\n";
 
   for (i = 1; i <= num; i++) bufMgr->unPinPage(file1, i, true);
 

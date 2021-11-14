@@ -1,12 +1,17 @@
 ##############################################################
 #               CMake Project Wrapper Makefile               #
-############################################################## 
+##############################################################
 CC = g++
 CFLAGS = -std=c++14 -g -Wall
+OUT_FILE = ./badgerdb_main
 
 all:
 	cd src;\
-	$(CC) $(CFLAGS) *.cpp exceptions/*.cpp -I. -o badgerdb_main
+	$(CC) $(CFLAGS) *.cpp exceptions/*.cpp -I. -o ${OUT_FILE}
+
+run:
+	cd src;\
+	${OUT_FILE}
 
 clean:
 	cd src;\
