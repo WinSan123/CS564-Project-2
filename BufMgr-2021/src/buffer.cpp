@@ -75,8 +75,15 @@ void BufMgr::allocBuf(FrameId &frame) {
     // Advance the clock hand
     advanceClock();
 
-    if ((clockHand == startingFrame) && (!candidateSeen))
-      throw BufferExceededException();
+    if (clockHand == startingFrame) {
+        if (!candidateSeen) {
+            throw BufferExceededException();
+        } else {
+            // Reset it so that if there is no candidateSeen this time around it
+            // will throw error
+            candidateSeen = false;
+        }
+    }
 
     BufDesc *currFrameDesc = &bufDescTable.at(clockHand);
 
@@ -116,9 +123,11 @@ void BufMgr::allocBuf(FrameId &frame) {
       currFrameDesc->dirty = false;
     }
 
-    // If the buffer frame has a valid page in it, remove the appropriate
-    //   entry from the hash table
-    hashTable.remove(currFrameDesc->file, currFrameDesc->pageNo);
+    try {
+        // If the buffer frame has a valid page in it, remove the appropriate
+        //   entry from the hash table
+        hashTable.remove(currFrameDesc->file, currFrameDesc->pageNo);
+    } catch (HashNotFoundException &e) {}
 
     // Use Frame (caller needs to call "Set()" on the BufDesc for this frame)
     frame = clockHand;
@@ -164,7 +173,7 @@ void BufMgr::readPage(File &file, const PageId pageNo, Page *&page) {
     allocBuf(frameNo);
 
     // read the page from disk into the buffer pool frame
-    bufPool[frameNo] = file.readPage(pageNo);
+    bufPool.at(frameNo) = file.readPage(pageNo);
     page = &bufPool.at(frameNo);
 
     // insert page into hashtable
@@ -242,7 +251,6 @@ void BufMgr::allocPage(File &file, PageId &pageNo, Page *&page) {
   page = &bufPool.at(frameNo);
 
   // insert page into hashtable
-  printf("%d %d\n", pageNo, frameNo);
   hashTable.insert(file, pageNo, frameNo);
 
   // invoke Set() on the frame to set it up properly
@@ -316,18 +324,13 @@ void BufMgr::flushFile(File &file) {
  * pool
  */
 void BufMgr::disposePage(File &file, const PageId PageNo) {
-  try {
-    FrameId frameNo;
-    hashTable.lookup(file, PageNo, frameNo);
+  FrameId frameNo;
+  hashTable.lookup(file, PageNo, frameNo);
 
-    // free frame
-    bufDescTable[frameNo].clear();
-    // corresponding entry is removed
-    hashTable.remove(file, PageNo);
-  } catch (HashNotFoundException &e) {
-    // when page to be deleted is not in the buffer pool
-    // we do nothing
-  }
+  // free frame
+  bufDescTable[frameNo].clear();
+  // corresponding entry is removed
+  hashTable.remove(file, PageNo);
 
   // delete page from file
   file.deletePage(PageNo);

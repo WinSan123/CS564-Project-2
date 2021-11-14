@@ -184,8 +184,6 @@ void test1(File &file1) {
     bufMgr->unPinPage(file1, pid[i], false);
   }
 
-  // bufMgr->printSelf();
-
   std::cout << "Test 1 passed" << "\n";
 }
 
@@ -194,17 +192,12 @@ void test2(File &file1, File &file2, File &file3) {
   // The page number and the value should match
 
   for (i = 0; i < num / 3; i++) {
-    PRINT(i);
-
     // allocate space for page in file 2 and a free frame for page 2, file 2
     // record gets inserted into page2
     // DIRTY BIT SHOULD BE SET
     bufMgr->allocPage(file2, pageno2, page2);
     sprintf(tmpbuf, "test.2 Page %u %7.1f", pageno2, (float)pageno2);
     rid2 = page2->insertRecord(tmpbuf);
-
-    // PRINT("------ HERE 0 ------");
-    // bufMgr->printSelf();
 
     // read random page from file 1
     // record should match
@@ -217,18 +210,12 @@ void test2(File &file1, File &file2, File &file3) {
       PRINT_ERROR("ERROR :: CONTENTS DID NOT MATCH");
     }
 
-    // PRINT("------ HERE 1 ------");
-    // bufMgr->printSelf();
-
     // allocate space for page in file 3 a free frame for page 3, file 3
     // record gets inserted
     // dirty bit should be set
     bufMgr->allocPage(file3, pageno3, page3);
     sprintf(tmpbuf, "test.3 Page %u %7.1f", pageno3, (float)pageno3);
     rid3 = page3->insertRecord(tmpbuf);
-
-    // PRINT("------ HERE 2 ------");
-    // bufMgr->printSelf();
 
     // read page 2 of file 2
     // change should've been made
@@ -238,9 +225,6 @@ void test2(File &file1, File &file2, File &file3) {
       PRINT_ERROR("ERROR :: CONTENTS DID NOT MATCH");
     }
 
-    // PRINT("------ HERE 3 ------");
-    // bufMgr->printSelf();
-
     // read page 3, file 3
     // change should've been made
     bufMgr->readPage(file3, pageno3, page3);
@@ -249,20 +233,12 @@ void test2(File &file1, File &file2, File &file3) {
       PRINT_ERROR("ERROR :: CONTENTS DID NOT MATCH");
     }
 
-    // PRINT("------ HERE 4 ------");
-    // bufMgr->printSelf();
-
     // frame for page 1, file 1 has pinCnt--
     // no changes made; dirty bit false
     bufMgr->unPinPage(file1, pageno1, false);
 
-    // PRINT("------ HERE 5 ------");
-    // bufMgr->printSelf();
-
     break;
   }
-
-  PRINT("second for loop");
 
   for (i = 0; i < num / 3; i++) {
     bufMgr->unPinPage(file2, i + 1, true);
