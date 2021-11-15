@@ -1,3 +1,19 @@
+/** Student 1
+ * Name: Alexander Peseckis
+ * Student ID: 908-154-1840
+ * Email: peseckis@wisc.edu
+ *
+ * Student 2
+ * Name: Win San
+ * Student ID: 907-936-4031
+ * Email: wsan3@wisc.edu
+ *
+ * Student 3
+ * Name: Steven Hizmi
+ * Student ID: 907-965-9059
+ * Email: shizmi@wisc.edu
+ */
+
 #include <stdlib.h>
 
 #include <iostream>
@@ -23,8 +39,6 @@
     exit(1);                                        \
   }
 
-#define PRINT(str) std::cout << str << std::endl;
-
 using namespace badgerdb;
 
 const PageId num = 100;
@@ -46,9 +60,7 @@ void test6(File &file1);
 void testBufMgr();
 
 int main() {
-  PRINT(" --- Test File I/O --- ");
-
-  // Following code shows how to use File and Page classes
+  // Following code shows how to you File and Page classes
 
   const std::string filename = "test.db";
   // Clean up from any previous runs that crashed.
@@ -106,8 +118,6 @@ int main() {
 }
 
 void testBufMgr() {
-  PRINT(" --- Test BufMgr --- ");
-
   // Create buffer manager
   bufMgr = std::make_shared<BufMgr>(num);
 
@@ -171,8 +181,6 @@ void test1(File &file1) {
     bufMgr->unPinPage(file1, pid[i], true);
   }
 
-  // bufMgr->printSelf();
-
   // Reading pages back...
   for (i = 0; i < num; i++) {
     bufMgr->readPage(file1, pid[i], page);
@@ -182,7 +190,6 @@ void test1(File &file1) {
     }
     bufMgr->unPinPage(file1, pid[i], false);
   }
-
   std::cout << "Test 1 passed"
             << "\n";
 }
@@ -192,15 +199,10 @@ void test2(File &file1, File &file2, File &file3) {
   // The page number and the value should match
 
   for (i = 0; i < num / 3; i++) {
-    // allocate space for page in file 2 and a free frame for page 2, file 2
-    // record gets inserted into page2
-    // DIRTY BIT SHOULD BE SET
     bufMgr->allocPage(file2, pageno2, page2);
     sprintf(tmpbuf, "test.2 Page %u %7.1f", pageno2, (float)pageno2);
     rid2 = page2->insertRecord(tmpbuf);
 
-    // read random page from file 1
-    // record should match
     long int index = random() % num;
     pageno1 = pid[index];
     bufMgr->readPage(file1, pageno1, page);
@@ -210,34 +212,23 @@ void test2(File &file1, File &file2, File &file3) {
       PRINT_ERROR("ERROR :: CONTENTS DID NOT MATCH");
     }
 
-    // allocate space for page in file 3 a free frame for page 3, file 3
-    // record gets inserted
-    // dirty bit should be set
     bufMgr->allocPage(file3, pageno3, page3);
     sprintf(tmpbuf, "test.3 Page %u %7.1f", pageno3, (float)pageno3);
     rid3 = page3->insertRecord(tmpbuf);
 
-    // read page 2 of file 2
-    // change should've been made
     bufMgr->readPage(file2, pageno2, page2);
     sprintf(tmpbuf, "test.2 Page %u %7.1f", pageno2, (float)pageno2);
     if (strncmp(page2->getRecord(rid2).c_str(), tmpbuf, strlen(tmpbuf)) != 0) {
       PRINT_ERROR("ERROR :: CONTENTS DID NOT MATCH");
     }
 
-    // read page 3, file 3
-    // change should've been made
     bufMgr->readPage(file3, pageno3, page3);
     sprintf(tmpbuf, "test.3 Page %u %7.1f", pageno3, (float)pageno3);
     if (strncmp(page3->getRecord(rid3).c_str(), tmpbuf, strlen(tmpbuf)) != 0) {
       PRINT_ERROR("ERROR :: CONTENTS DID NOT MATCH");
     }
 
-    // frame for page 1, file 1 has pinCnt--
-    // no changes made; dirty bit false
     bufMgr->unPinPage(file1, pageno1, false);
-
-    break;
   }
 
   for (i = 0; i < num / 3; i++) {
@@ -322,6 +313,3 @@ void test6(File &file1) {
 
   bufMgr->flushFile(file1);
 }
-
-
-

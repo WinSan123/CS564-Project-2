@@ -4,6 +4,21 @@
  * @section LICENSE
  * Copyright (c) 2012 Database Group, Computer Sciences Department, University
  * of Wisconsin-Madison.
+ *
+ * Student 1
+ * Name: Alexander Peseckis
+ * Student ID: 908-154-1840
+ * Email: peseckis@wisc.edu
+ *
+ * Student 2
+ * Name: Win San
+ * Student ID: 907-936-4031
+ * Email: wsan3@wisc.edu
+ *
+ * Student 3
+ * Name: Steven Hizmi
+ * Student ID: 907-965-9059
+ * Email: shizmi@wisc.edu
  */
 
 #include "buffer.h"
@@ -186,7 +201,7 @@ void BufMgr::unPinPage(File &file, const PageId pageNo, const bool dirty) {
     }
 
     bufDesc->pinCnt--;
-    bufDesc->dirty = dirty;
+    if (bufDesc->dirty || dirty) bufDesc->dirty = true;
   } catch (HashNotFoundException &e) {
     // does nothing if page is not found in table
   }
@@ -210,6 +225,7 @@ void BufMgr::allocPage(File &file, PageId &pageNo, Page *&page) {
   //    pageNo parameter and a pointer to the BUFFER FRAME allocated for the
   //    page via the page parameter
   pageNo = newPage.page_number();
+  bufPool.at(frameNo) = newPage;
   page = &bufPool.at(frameNo);
 
   // insert page into hashtable
